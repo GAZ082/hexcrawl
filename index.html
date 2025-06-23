@@ -1,0 +1,1352 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title data-translate-key="title">Hexcrawl Generator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f0f4f8; /* Light blue-gray background */
+            color: #334155; /* Darker text */
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 1.5rem;
+        }
+        h1, h2, h3 {
+            color: #1e293b; /* Even darker for headings */
+            font-weight: 700;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            border-radius: 0.5rem;
+            overflow: hidden; /* Ensures rounded corners apply to content */
+        }
+        th, td {
+            padding: 0.75rem 1rem;
+            text-align: left;
+            border-bottom: 1px solid #cbd5e1; /* Light gray border */
+        }
+        th {
+            background-color: #3b82f6; /* Blue header */
+            color: white;
+            font-weight: 600;
+            text-transform: uppercase;
+            font-size: 0.875rem;
+        }
+        tr:nth-child(even) {
+            background-color: #e0f2fe; /* Lighter blue for even rows */
+        }
+        tr:hover {
+            background-color: #bfdbfe; /* Even lighter blue on hover */
+        }
+        .dice-button {
+            background-color: #22c55e; /* Green button */
+            color: white;
+            padding: 0.75rem 1.5rem;
+            border-radius: 0.5rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background-color 0.2s ease-in-out;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+        .dice-button:hover {
+            background-color: #16a34a; /* Darker green on hover */
+        }
+        .dice-select-table { /* Specific class for table-bound selects */
+            padding: 0.65rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background-color: white;
+            color: #334155;
+            appearance: none; /* Remove default arrow */
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em;
+        }
+        .dice-result-table { /* Specific class for table-bound results */
+            background-color: #fef3c7; /* Light yellow for result */
+            border: 1px solid #fcd34d; /* Darker yellow border */
+            color: #92400e; /* Dark brown text */
+            padding: 0.5rem 1rem; /* Smaller padding */
+            border-radius: 0.5rem;
+            font-size: 1rem; /* Smaller font size */
+            font-weight: 600;
+            text-align: center;
+            min-width: 80px; /* Ensure space for result */
+        }
+        .dice-controls {
+            margin-top: 0.75rem; /* Space above the dice controls */
+            margin-bottom: 0.75rem; /* Space below the dice controls */
+            justify-content: flex-start; /* Align to the left */
+        }
+        .highlighted-row {
+            background-color: #a7f3d0 !important; /* Light green highlight */
+            border: 2px solid #34d399; /* Green border */
+            transition: background-color 0.3s ease-in-out, border-color 0.3s ease-in-out;
+        }
+        /* Language switcher styles */
+        .language-switcher {
+            display: flex;
+            justify-content: flex-end;
+            margin-bottom: 1rem;
+        }
+        .language-switcher select {
+            padding: 0.5rem 1rem;
+            border: 1px solid #cbd5e1;
+            border-radius: 0.5rem;
+            background-color: white;
+            color: #334155;
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20' fill='currentColor'%3E%3Cpath fill-rule='evenodd' d='M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z' clip-rule='evenodd'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.75rem center;
+            background-size: 1.5em;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="p-4">
+    <div class="container bg-white rounded-lg shadow-xl p-6 md:p-8">
+        <!-- Language Switcher -->
+        <div class="language-switcher">
+            <select id="language-toggle">
+                <option value="en">English</option>
+                <option value="es">Español</option>
+            </select>
+        </div>
+
+        <h1 class="text-3xl md:text-4xl text-center mb-6" data-translate-key="header_title">Hexcrawl Map & Content Generator</h1>
+
+        <!-- Hexcrawl Tables Section -->
+        <h2 class="text-2xl md:text-3xl mb-4 text-center" data-translate-key="tables_section_title">Hexcrawl Generation Tables</h2>
+        <p class="mb-6 text-center text-gray-600" data-translate-key="tables_description">
+            Use these tables to generate your hexcrawl map and content on the fly.
+            Remember to adapt the entries to your specific campaign's setting and themes.
+        </p>
+
+        <!-- I. Map Generation Tables -->
+        <h3 class="text-xl md:text-2xl mb-3 text-blue-700" data-translate-key="map_generation_tables_title">I. Map Generation Tables (Per Hex)</h3>
+        <p class="mb-4 text-gray-700" data-translate-key="map_generation_tables_description">
+            When players move into a new, unrevealed hex, you'd roll on these first.
+        </p>
+
+        <!-- Terrain Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="terrain_table_title">1. Terrain Type Table (d20)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="terrain_table_description">
+            This table determines the primary terrain feature of the hex. It's often influenced by adjacent hexes to create more natural-looking maps.
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="terrain_type_header">Terrain Type</th>
+                    <th data-translate-key="table_header_notes">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-4</td>
+                    <td data-translate-key="terrain_forest">Forest</td>
+                    <td data-translate-key="notes_forest">Can specify Light, Dense, Ancient, etc.</td>
+                </tr>
+                <tr>
+                    <td>5-8</td>
+                    <td data-translate-key="terrain_hills">Hills</td>
+                    <td data-translate-key="notes_hills">Can specify Rolling, Rocky, Steep, etc.</td>
+                </tr>
+                <tr>
+                    <td>9-12</td>
+                    <td data-translate-key="terrain_plains">Plains</td>
+                    <td data-translate-key="notes_plains">Can specify Grassland, Savannah, Steppe, etc.</td>
+                </tr>
+                <tr>
+                    <td>13-14</td>
+                    <td data-translate-key="terrain_mountains">Mountains</td>
+                    <td data-translate-key="notes_mountains">Can specify Foothills, Peaks, Volcanic, etc.</td>
+                </tr>
+                <tr>
+                    <td>15-16</td>
+                    <td data-translate-key="terrain_swamp_marsh">Swamp/Marsh</td>
+                    <td data-translate-key="notes_swamp_marsh">Can specify Bog, Fen, Mangrove, etc.</td>
+                </tr>
+                <tr>
+                    <td>17</td>
+                    <td data-translate-key="terrain_river_lake">River/Lake</td>
+                    <td data-translate-key="notes_river_lake">Consider if a significant body of water dominates.</td>
+                </tr>
+                <tr>
+                    <td>18</td>
+                    <td data-translate-key="terrain_desert">Desert</td>
+                    <td data-translate-key="notes_desert">Can specify Sandy, Rocky, Arid, etc.</td>
+                </tr>
+                <tr>
+                    <td>19</td>
+                    <td data-translate-key="terrain_badlands">Badlands</td>
+                    <td data-translate-key="notes_badlands">Strange, desolate, or difficult terrain.</td>
+                </tr>
+                <tr>
+                    <td>20</td>
+                    <td data-translate-key="terrain_unique_special">Unique/Special</td>
+                    <td data-translate-key="notes_unique_special">Roll on a sub-table for rare terrain (e.g., enchanted grove, volcanic caldera, floating island).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Major Feature/Landmark Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="major_feature_table_title">2. Major Feature/Landmark Table (d20)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="major_feature_table_description">
+            Once the terrain is established, this table determines if there's a significant, static feature in the hex.
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="major_feature_header">Major Feature</th>
+                    <th data-translate-key="table_header_notes">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-5</td>
+                    <td data-translate-key="major_feature_none">None</td>
+                    <td data-translate-key="notes_none">The hex is mostly natural terrain.</td>
+                </tr>
+                <tr>
+                    <td>6-8</td>
+                    <td data-translate-key="major_feature_ruin">Ruin</td>
+                    <td data-translate-key="notes_ruin">Roll on a "Ruin Type" sub-table (e.g., Ancient Tower, Crumbling Wall, Abandoned Village).</td>
+                </tr>
+                <tr>
+                    <td>9-11</td>
+                    <td data-translate-key="major_feature_settlement">Settlement</td>
+                    <td data-translate-key="notes_settlement">Roll on a "Settlement Type" sub-table (e.g., Hamlet, Village, Isolated Keep, Nomad Camp).</td>
+                </tr>
+                <tr>
+                    <td>12-14</td>
+                    <td data-translate-key="major_feature_lair">Lair</td>
+                    <td data-translate-key="notes_lair">A prominent, often long-term dwelling of a creature. Roll on a "Lair Type" sub-table.</td>
+                </tr>
+                <tr>
+                    <td>15-16</td>
+                    <td data-translate-key="major_feature_natural_wonder">Natural Wonder</td>
+                    <td data-translate-key="notes_natural_wonder">Unique geological or botanical feature (e.g., Giant Waterfall, Petrified Forest, Crystal Caves).</td>
+                </tr>
+                <tr>
+                    <td>17</td>
+                    <td data-translate-key="major_feature_magical_nexus">Magical Nexus</td>
+                    <td data-translate-key="notes_magical_nexus">A place with strong magical energy (e.g., Ancient Standing Stones, Fey Crossing, Wild Magic Zone).</td>
+                </tr>
+                <tr>
+                    <td>18</td>
+                    <td data-translate-key="major_feature_dungeon_entrance">Dungeon Entrance</td>
+                    <td data-translate-key="notes_dungeon_entrance">An entrance to an underground complex.</td>
+                </tr>
+                <tr>
+                    <td>19</td>
+                    <td data-translate-key="major_feature_resource_node">Resource Node</td>
+                    <td data-translate-key="notes_resource_node">A significant natural resource (e.g., Mine, Quarry, Rich Hunting Grounds, Rare Herb Patch).</td>
+                </tr>
+                <tr>
+                    <td>20</td>
+                    <td data-translate-key="major_feature_unique_quest_hook">Unique/Quest Hook</td>
+                    <td data-translate-key="notes_unique_quest_hook">Something highly unusual or directly tied to a potential quest (e.g., Crashed Airship, Giant Skeleton, Mysterious Glowing Crater).</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- II. Content Generation Tables -->
+        <h3 class="text-xl md:text-2xl mb-3 text-blue-700" data-translate-key="content_generation_tables_title">II. Content Generation Tables (Per Hex / Per Travel Watch)</h3>
+        <p class="mb-4 text-gray-700" data-translate-key="content_generation_tables_description">
+            These tables are used when players are actively exploring a hex or when checking for encounters during travel.
+        </p>
+
+        <!-- Encounter Check -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="encounter_check_title">1. Encounter Check (d6, d8, d12, or d20, depending on desired encounter rate)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="encounter_check_description">
+            This roll determines if <em>anything</em> happens during a given travel segment (e.g., a "watch" or a half-day of travel).
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="6">
+                <option value="4">d4</option>
+                <option value="6" selected>d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20">d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="6" data-translate-key-prefix="roll_dice">Roll d6</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll_example">Roll (e.g., 1d6)</th>
+                    <th data-translate-key="table_header_result">Result</th>
+                    <th data-translate-key="table_header_notes">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1</td>
+                    <td data-translate-key="result_encounter">Encounter</td>
+                    <td data-translate-key="notes_encounter">Roll on the specific Encounter Type table.</td>
+                </tr>
+                <tr>
+                    <td>2</td>
+                    <td data-translate-key="result_sign_discovery">Sign/Discovery</td>
+                    <td data-translate-key="notes_sign_discovery">Roll on a "Sign/Discovery" table (tracks, distant smoke, strange sounds, rare plant).</td>
+                </tr>
+                <tr>
+                    <td>3-6</td>
+                    <td data-translate-key="result_nothing">Nothing</td>
+                    <td data-translate-key="notes_uneventful_travel">Uneventful travel.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Encounter Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="encounter_type_table_title">2. Encounter Type Table (d20)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="encounter_type_table_description">
+            If an encounter occurs, this table determines its nature. You'll likely want different versions of this table per <strong>terrain type</strong> (e.g., "Forest Encounters," "Mountain Encounters").
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="encounter_type_header">Encounter Type</th>
+                    <th data-translate-key="table_header_notes">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-8</td>
+                    <td data-translate-key="encounter_creature">Creature Encounter</td>
+                    <td data-translate-key="notes_creature_encounter">Roll on a "Creature Type" table for the terrain. Can be hostile, neutral, or fleeing.</td>
+                </tr>
+                <tr>
+                    <td>9-12</td>
+                    <td data-translate-key="encounter_npc">NPC Encounter</td>
+                    <td data-translate-key="notes_npc_encounter">Roll on "NPC Encounter" table (e.g., Traveling Merchant, Rival Adventurers, Hermit, Trapper).</td>
+                </tr>
+                <tr>
+                    <td>13-15</td>
+                    <td data-translate-key="encounter_environmental_hazard">Environmental Hazard</td>
+                    <td data-translate-key="notes_environmental_hazard">Roll on "Hazard Type" table (e.g., Quicksand, Flash Flood, Rockslide, Dense Fog, Swarm of Insects).</td>
+                </tr>
+                <tr>
+                    <td>16-17</td>
+                    <td data-translate-key="encounter_object_treasure">Object/Treasure Found</td>
+                    <td data-translate-key="notes_object_treasure">Roll on "Object/Treasure" table (e.g., Lost Item, Buried Cache, Remains of a Traveler).</td>
+                </tr>
+                <tr>
+                    <td>18-19</td>
+                    <td data-translate-key="encounter_event_complication">Event/Complication</td>
+                    <td data-translate-key="notes_event_complication">A non-combat, non-object event (e.g., Strange Phenomenon, Lost, Unexpected Weather Change, Sign of a Larger Threat).</td>
+                </tr>
+                <tr>
+                    <td>20</td>
+                    <td data-translate-key="encounter_lair_fixed_location">Lair/Fixed Location</td>
+                    <td data-translate-key="notes_lair_fixed_location">This encounter is actually a previously unrevealed fixed location in the hex (e.g., a small cave, a hidden shrine). This adds to your map.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Creature Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="creature_type_table_title">3. Creature Type Table (d20, per Terrain/Region)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="creature_type_table_description">
+            This is an example table. You would populate this with creatures appropriate for your specific biomes.
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="creature_forest_example">Forest Creatures (Example)</th>
+                    <th data-translate-key="creature_mountain_example">Mountain Creatures (Example)</th>
+                    <th data-translate-key="creature_swamp_example">Swamp Creatures (Example)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-2</td>
+                    <td data-translate-key="creature_giant_spiders">Giant Spiders</td>
+                    <td data-translate-key="creature_goblins">Goblins</td>
+                    <td data-translate-key="creature_giant_frogs">Giant Frogs</td>
+                </tr>
+                <tr>
+                    <td>3-4</td>
+                    <td data-translate-key="creature_wolves">Wolves</td>
+                    <td data-translate-key="creature_dire_wolves">Dire Wolves</td>
+                    <td data-translate-key="creature_crocodiles">Crocodiles</td>
+                </tr>
+                <tr>
+                    <td>5-6</td>
+                    <td data-translate-key="creature_owlbear">Owlbear</td>
+                    <td data-translate-key="creature_giant_eagles">Giant Eagles</td>
+                    <td data-translate-key="creature_hydras">Hydras</td>
+                </tr>
+                <tr>
+                    <td>...</td>
+                    <td data-translate-key="ellipses">...</td>
+                    <td data-translate-key="ellipses">...</td>
+                    <td data-translate-key="ellipses">...</td>
+                </tr>
+                <tr>
+                    <td>19-20</td>
+                    <td data-translate-key="creature_ancient_treant">Ancient Treant</td>
+                    <td data-translate-key="creature_dragon">Dragon</td>
+                    <td data-translate-key="creature_black_dragon">Black Dragon</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- NPC Encounter Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="npc_encounter_table_title">4. NPC Encounter Table (d20, per Region/Theme)</h4>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="npc_encounter_header">NPC Encounter</th>
+                    <th data-translate-key="details_motivation_header">Details/Motivation</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-3</td>
+                    <td data-translate-key="npc_traveling_merchant">Traveling Merchant</td>
+                    <td data-translate-key="details_traveling_merchant">Buying/selling, seeking protection, carrying rumors.</td>
+                </tr>
+                <tr>
+                    <td>4-6</td>
+                    <td data-translate-key="npc_rival_adventuring_party">Rival Adventuring Party</td>
+                    <td data-translate-key="details_rival_adventuring_party">Friendly, neutral, or hostile; pursuing a similar goal.</td>
+                </tr>
+                <tr>
+                    <td>7-8</td>
+                    <td data-translate-key="npc_hermit_reclusive">Hermit/Reclusive NPC</td>
+                    <td data-translate-key="details_hermit_reclusive">Offers wisdom, sells rare items, warns of dangers.</td>
+                </tr>
+                <tr>
+                    <td>9-10</td>
+                    <td data-translate-key="npc_scout_patrol">Scout/Patrol</td>
+                    <td data-translate-key="details_scout_patrol">From a nearby settlement or faction.</td>
+                </tr>
+                <tr>
+                    <td>11-12</td>
+                    <td data-translate-key="npc_fugitive_outlaw">Fugitive/Outlaw</td>
+                    <td data-translate-key="details_fugitive_outlaw">Seeking refuge, desperate, may be dangerous.</td>
+                </tr>
+                <tr>
+                    <td>13-14</td>
+                    <td data-translate-key="npc_lost_traveler">Lost Traveler</td>
+                    <td data-translate-key="details_lost_traveler">Needs help, can offer information or a small reward.</td>
+                </tr>
+                <tr>
+                    <td>15-16</td>
+                    <td data-translate-key="npc_monster_hunter">Monster Hunter</td>
+                    <td data-translate-key="details_monster_hunter">Tracking something in the area, may offer a bounty.</td>
+                </tr>
+                <tr>
+                    <td>17-18</td>
+                    <td data-translate-key="npc_cultists_secret_society">Cultists/Secret Society</td>
+                    <td data-translate-key="details_cultists_secret_society">Performing a ritual, gathering something, secretive.</td>
+                </tr>
+                <tr>
+                    <td>19-20</td>
+                    <td data-translate-key="npc_unique_npc">Unique NPC</td>
+                    <td data-translate-key="details_unique_npc">A named character with a specific mini-quest or major secret.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Hazard Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="hazard_type_table_title">5. Hazard Type Table (d12, per Terrain)</h4>
+        <p class="mb-2 text-gray-600" data-translate-key="hazard_type_table_description">
+            This is an example table. You would populate this with hazards appropriate for your specific biomes.
+        </p>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="12">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12" selected>d12</option>
+                <option value="20">d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="12" data-translate-key-prefix="roll_dice">Roll d12</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d12)</th>
+                    <th data-translate-key="hazard_forest_example">Forest Hazards (Example)</th>
+                    <th data-translate-key="hazard_mountain_example">Mountain Hazards (Example)</th>
+                    <th data-translate-key="hazard_swamp_example">Swamp Hazards (Example)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-2</td>
+                    <td data-translate-key="hazard_thick_undergrowth">Thick Undergrowth</td>
+                    <td data-translate-key="hazard_steep_cliff">Steep Cliff</td>
+                    <td data-translate-key="hazard_quicksand">Quicksand</td>
+                </tr>
+                <tr>
+                    <td>3-4</td>
+                    <td data-translate-key="hazard_poisonous_plants">Poisonous Plants</td>
+                    <td data-translate-key="hazard_rockslide">Rockslide</td>
+                    <td data-translate-key="hazard_disease_insects">Disease-carrying Insects</td>
+                </tr>
+                <tr>
+                    <td>5-6</td>
+                    <td data-translate-key="hazard_sudden_sinkhole">Sudden Sinkhole</td>
+                    <td data-translate-key="hazard_strong_winds">Strong Winds</td>
+                    <td data-translate-key="hazard_dense_fog_mist">Dense Fog/Mist</td>
+                </tr>
+                <tr>
+                    <td>7-8</td>
+                    <td data-translate-key="hazard_entangling_vines">Entangling Vines</td>
+                    <td data-translate-key="hazard_narrow_pass">Narrow Pass</td>
+                    <td data-translate-key="hazard_hidden_pit">Hidden Pit</td>
+                </tr>
+                <tr>
+                    <td>9-10</td>
+                    <td data-translate-key="hazard_rogue_fey_ambush">Rogue Fey Ambush</td>
+                    <td data-translate-key="hazard_avalanche_zone">Avalanche Zone</td>
+                    <td data-translate-key="hazard_carnivorous_plants">Carnivorous Plants</td>
+                </tr>
+                <tr>
+                    <td>11-12</td>
+                    <td data-translate-key="hazard_wild_magic_surge">Wild Magic Surge</td>
+                    <td data-translate-key="hazard_magical_storm">Magical Storm</td>
+                    <td data-translate-key="hazard_ghastly_mire">Ghastly Mire</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Object/Treasure Found Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="object_treasure_table_title">6. Object/Treasure Found Table (d20)</h4>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="20">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12">d12</option>
+                <option value="20" selected>d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="20" data-translate-key-prefix="roll_dice">Roll d20</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d20)</th>
+                    <th data-translate-key="object_treasure_found_header">Object/Treasure Found</th>
+                    <th data-translate-key="table_header_notes">Notes</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-5</td>
+                    <td data-translate-key="object_mundane_supplies">Mundane Supplies</td>
+                    <td data-translate-key="notes_mundane_supplies">Lost rations, rope, broken tool.</td>
+                </tr>
+                <tr>
+                    <td>6-9</td>
+                    <td data-translate-key="object_small_coin">Small amount of coin</td>
+                    <td data-translate-key="notes_small_coin">1d6gp, 2d10sp.</td>
+                </tr>
+                <tr>
+                    <td>10-12</td>
+                    <td data-translate-key="object_useful_mundane_item">Useful mundane item</td>
+                    <td data-translate-key="notes_useful_mundane_item">Healing potion, flint & steel, scroll case (empty).</td>
+                </tr>
+                <tr>
+                    <td>13-15</td>
+                    <td data-translate-key="object_clue_map_fragment">Clue/Map Fragment</td>
+                    <td data-translate-key="notes_clue_map_fragment">A torn map pointing to a ruin, a cryptic note, a symbol.</td>
+                </tr>
+                <tr>
+                    <td>16-17</td>
+                    <td data-translate-key="object_minor_magic_item">Minor Magic Item</td>
+                    <td data-translate-key="notes_minor_magic_item">Potion, scroll, single-use wondrous item.</td>
+                </tr>
+                <tr>
+                    <td>18</td>
+                    <td data-translate-key="object_valuable_natural_resource">Valuable Natural Resource</td>
+                    <td data-translate-key="notes_valuable_natural_resource">Rare gem, exotic animal pelt, valuable ore.</td>
+                </tr>
+                <tr>
+                    <td>19</td>
+                    <td data-translate-key="object_remains_story">Remains with a Story</td>
+                    <td data-translate-key="notes_remains_story">Skeleton with a journal, a forgotten camp.</td>
+                </tr>
+                <tr>
+                    <td>20</td>
+                    <td data-translate-key="object_strange_device">Strange Device/Artifact</td>
+                    <td data-translate-key="notes_strange_device">Non-magical but unusual, its purpose unknown.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- III. Sub-Tables for Features/Locations -->
+        <h3 class="text-xl md:text-2xl mb-3 text-blue-700" data-translate-key="sub_tables_title">III. Sub-Tables for Features/Locations</h3>
+        <p class="mb-4 text-gray-700" data-translate-key="sub_tables_description">
+            When a Major Feature or Lair is generated, you'd roll on one of these.
+        </p>
+
+        <!-- Ruin Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="ruin_type_table_title">1. Ruin Type Table (d12)</h4>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="12">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10">d10</option>
+                <option value="12" selected>d12</option>
+                <option value="20">d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="12" data-translate-key-prefix="roll_dice">Roll d12</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d12)</th>
+                    <th data-translate-key="ruin_type_header">Ruin Type</th>
+                    <th data-translate-key="potential_inhabitants_secrets_header">Potential Inhabitants/Secrets</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-2</td>
+                    <td data-translate-key="ruin_ancient_watchtower">Ancient Watchtower</td>
+                    <td data-translate-key="ruin_notes_ancient_watchtower">Old defenses, small garrison.</td>
+                </tr>
+                <tr>
+                    <td>3-4</td>
+                    <td data-translate-key="ruin_crumbling_temple">Crumbling Temple/Shrine</td>
+                    <td data-translate-key="ruin_notes_crumbling_temple">Forgotten deity, cult activity.</td>
+                </tr>
+                <tr>
+                    <td>5-6</td>
+                    <td data-translate-key="ruin_abandoned_village">Abandoned Village</td>
+                    <td data-translate-key="ruin_notes_abandoned_village">Ghosts, reclusive animals, hidden cellar.</td>
+                </tr>
+                <tr>
+                    <td>7-8</td>
+                    <td data-translate-key="ruin_ruined_fort_castle">Ruined Fort/Castle</td>
+                    <td data-translate-key="ruin_notes_ruined_fort_castle">Bandits, monsters, hidden treasure.</td>
+                </tr>
+                <tr>
+                    <td>9-10</td>
+                    <td data-translate-key="ruin_collapsed_mine_entrance">Collapsed Mine Entrance</td>
+                    <td data-translate-key="ruin_notes_collapsed_mine_entrance">Monstrous inhabitants, mineral veins.</td>
+                </tr>
+                <tr>
+                    <td>11</td>
+                    <td data-translate-key="ruin_overgrown_tomb_crypt">Overgrown Tomb/Crypt</td>
+                    <td data-translate-key="ruin_notes_overgrown_tomb_crypt">Undead, ancient artifacts.</td>
+                </tr>
+                <tr>
+                    <td>12</td>
+                    <td data-translate-key="ruin_strange_alien_structure">Strange, Alien Structure</td>
+                    <td data-translate-key="ruin_notes_strange_alien_structure">Mysterious technology, otherworldly influence.</td>
+                </tr>
+            </tbody>
+        </table>
+
+        <!-- Lair Type Table -->
+        <h4 class="text-lg md:text-xl font-semibold mb-2" data-translate-key="lair_type_table_title">2. Lair Type Table (d10)</h4>
+        <div class="dice-controls flex items-center space-x-2">
+            <select class="dice-select-table" data-default-dice="10">
+                <option value="4">d4</option>
+                <option value="6">d6</option>
+                <option value="8">d8</option>
+                <option value="10" selected>d10</option>
+                <option value="12">d12</option>
+                <option value="20">d20</option>
+                <option value="100">d100</option>
+            </select>
+            <button class="roll-dice-table-btn dice-button" data-target-dice="10" data-translate-key-prefix="roll_dice">Roll d10</button>
+            <div class="dice-result-table result-box hidden">
+                <span data-translate-key="result_prefix">Result</span>: <span class="result-value-table font-bold"></span>
+            </div>
+        </div>
+        <table>
+            <thead>
+                <tr>
+                    <th data-translate-key="table_header_roll">Roll (d10)</th>
+                    <th data-translate-key="lair_type_header">Lair Type</th>
+                    <th data-translate-key="common_occupants_header">Common Occupants (example)</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>1-2</td>
+                    <td data-translate-key="lair_cave_system">Cave System</td>
+                    <td data-translate-key="lair_occupants_cave_system">Goblins, Orcs, Bears.</td>
+                </tr>
+                <tr>
+                    <td>3-4</td>
+                    <td data-translate-key="lair_den_burrow">Den/Burrow</td>
+                    <td data-translate-key="lair_occupants_den_burrow">Wolves, Giant Spiders, Owlbears.</td>
+                </tr>
+                <tr>
+                    <td>5-6</td>
+                    <td data-translate-key="lair_nest_perch">Nest/Perch</td>
+                    <td data-translate-key="lair_occupants_nest_perch">Giant Birds, Wyverns, Harpies.</td>
+                </tr>
+                <tr>
+                    <td>7-8</td>
+                    <td data-translate-key="lair_hidden_glen_grove">Hidden Glen/Grove</td>
+                    <td data-translate-key="lair_occupants_hidden_glen_grove">Fey creatures, Druids, monstrous plants.</td>
+                </tr>
+                <tr>
+                    <td>9</td>
+                    <td data-translate-key="lair_subterranean_lair">Subterranean Lair</td>
+                    <td data-translate-key="lair_occupants_subterranean_lair">Drow, Undead, Oozes.</td>
+                </tr>
+                <tr>
+                    <td>10</td>
+                    <td data-translate-key="lair_unique_lair">Unique Lair</td>
+                    <td data-translate-key="lair_occupants_unique_lair">Dragon's hoard, Lich's tower, Demon's gate.</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const translations = {
+                en: {
+                    title: "Hexcrawl Generator",
+                    header_title: "Hexcrawl Map & Content Generator",
+                    tables_section_title: "Hexcrawl Generation Tables",
+                    tables_description: "Use these tables to generate your hexcrawl map and content on the fly. Remember to adapt the entries to your specific campaign's setting and themes.",
+                    map_generation_tables_title: "I. Map Generation Tables (Per Hex)",
+                    map_generation_tables_description: "When players move into a new, unrevealed hex, you'd roll on these first.",
+                    terrain_table_title: "1. Terrain Type Table (d20)",
+                    terrain_table_description: "This table determines the primary terrain feature of the hex. It's often influenced by adjacent hexes to create more natural-looking maps.",
+                    table_header_roll: "Roll (d20)",
+                    terrain_type_header: "Terrain Type",
+                    table_header_notes: "Notes",
+                    terrain_forest: "Forest",
+                    notes_forest: "Can specify Light, Dense, Ancient, etc.",
+                    terrain_hills: "Hills",
+                    notes_hills: "Can specify Rolling, Rocky, Steep, etc.",
+                    terrain_plains: "Plains",
+                    notes_plains: "Can specify Grassland, Savannah, Steppe, etc.",
+                    terrain_mountains: "Mountains",
+                    notes_mountains: "Can specify Foothills, Peaks, Volcanic, etc.",
+                    terrain_swamp_marsh: "Swamp/Marsh",
+                    notes_swamp_marsh: "Can specify Bog, Fen, Mangrove, etc.",
+                    terrain_river_lake: "River/Lake",
+                    notes_river_lake: "Consider if a significant body of water dominates.",
+                    terrain_desert: "Desert",
+                    notes_desert: "Can specify Sandy, Rocky, Arid, etc.",
+                    terrain_badlands: "Badlands",
+                    notes_badlands: "Strange, desolate, or difficult terrain.",
+                    terrain_unique_special: "Unique/Special",
+                    notes_unique_special: "Roll on a sub-table for rare terrain (e.g., enchanted grove, volcanic caldera, floating island).",
+
+                    major_feature_table_title: "2. Major Feature/Landmark Table (d20)",
+                    major_feature_table_description: "Once the terrain is established, this table determines if there's a significant, static feature in the hex.",
+                    major_feature_header: "Major Feature",
+                    major_feature_none: "None",
+                    notes_none: "The hex is mostly natural terrain.",
+                    major_feature_ruin: "Ruin",
+                    notes_ruin: "Roll on a \"Ruin Type\" sub-table (e.g., Ancient Tower, Crumbling Wall, Abandoned Village).",
+                    major_feature_settlement: "Settlement",
+                    notes_settlement: "Roll on a \"Settlement Type\" sub-table (e.g., Hamlet, Village, Isolated Keep, Nomad Camp).",
+                    major_feature_lair: "Lair",
+                    notes_lair: "A prominent, often long-term dwelling of a creature. Roll on a \"Lair Type\" sub-table.",
+                    major_feature_natural_wonder: "Natural Wonder",
+                    notes_natural_wonder: "Unique geological or botanical feature (e.g., Giant Waterfall, Petrified Forest, Crystal Caves).",
+                    major_feature_magical_nexus: "Magical Nexus",
+                    notes_magical_nexus: "A place with strong magical energy (e.g., Ancient Standing Stones, Fey Crossing, Wild Magic Zone).",
+                    major_feature_dungeon_entrance: "Dungeon Entrance",
+                    notes_dungeon_entrance: "An entrance to an underground complex.",
+                    major_feature_resource_node: "Resource Node",
+                    notes_resource_node: "A significant natural resource (e.g., Mine, Quarry, Rich Hunting Grounds, Rare Herb Patch).",
+                    major_feature_unique_quest_hook: "Unique/Quest Hook",
+                    notes_unique_quest_hook: "Something highly unusual or directly tied to a potential quest (e.g., Crashed Airship, Giant Skeleton, Mysterious Glowing Crater).",
+
+                    content_generation_tables_title: "II. Content Generation Tables (Per Hex / Per Travel Watch)",
+                    content_generation_tables_description: "These tables are used when players are actively exploring a hex or when checking for encounters during travel.",
+                    encounter_check_title: "1. Encounter Check (d6, d8, d12, or d20, depending on desired encounter rate)",
+                    encounter_check_description: "This roll determines if <em>anything</em> happens during a given travel segment (e.g., a \"watch\" or a half-day of travel).",
+                    table_header_roll_example: "Roll (e.g., 1d6)",
+                    table_header_result: "Result",
+                    result_encounter: "Encounter",
+                    notes_encounter: "Roll on the specific Encounter Type table.",
+                    result_sign_discovery: "Sign/Discovery",
+                    notes_sign_discovery: "Roll on a \"Sign/Discovery\" table (tracks, distant smoke, strange sounds, rare plant).",
+                    result_nothing: "Nothing",
+                    notes_uneventful_travel: "Uneventful travel.",
+
+                    encounter_type_table_title: "2. Encounter Type Table (d20)",
+                    encounter_type_table_description: "If an encounter occurs, this table determines its nature. You'll likely want different versions of this table per <strong>terrain type</strong> (e.g., \"Forest Encounters,\" \"Mountain Encounters\").",
+                    encounter_type_header: "Encounter Type",
+                    encounter_creature: "Creature Encounter",
+                    notes_creature_encounter: "Roll on a \"Creature Type\" table for the terrain. Can be hostile, neutral, or fleeing.",
+                    encounter_npc: "NPC Encounter",
+                    notes_npc_encounter: "Roll on \"NPC Encounter\" table (e.g., Traveling Merchant, Rival Adventurers, Hermit, Trapper).",
+                    encounter_environmental_hazard: "Environmental Hazard",
+                    notes_environmental_hazard: "Roll on \"Hazard Type\" table (e.g., Quicksand, Flash Flood, Rockslide, Dense Fog, Swarm of Insects).",
+                    encounter_object_treasure: "Object/Treasure Found",
+                    notes_object_treasure: "Roll on \"Object/Treasure\" table (e.g., Lost Item, Buried Cache, Remains of a Traveler).",
+                    encounter_event_complication: "Event/Complication",
+                    notes_event_complication: "A non-combat, non-object event (e.g., Strange Phenomenon, Lost, Unexpected Weather Change, Sign of a Larger Threat).",
+                    encounter_lair_fixed_location: "Lair/Fixed Location",
+                    notes_lair_fixed_location: "This encounter is actually a previously unrevealed fixed location in the hex (e.g., a small cave, a hidden shrine). This adds to your map.",
+
+                    creature_type_table_title: "3. Creature Type Table (d20, per Terrain/Region)",
+                    creature_type_table_description: "This is an example table. You would populate this with creatures appropriate for your specific biomes.",
+                    creature_forest_example: "Forest Creatures (Example)",
+                    creature_mountain_example: "Mountain Creatures (Example)",
+                    creature_swamp_example: "Swamp Creatures (Example)",
+                    creature_giant_spiders: "Giant Spiders",
+                    creature_goblins: "Goblins",
+                    creature_giant_frogs: "Giant Frogs",
+                    creature_wolves: "Wolves",
+                    creature_dire_wolves: "Dire Wolves",
+                    creature_crocodiles: "Crocodiles",
+                    creature_owlbear: "Owlbear",
+                    creature_giant_eagles: "Giant Eagles",
+                    creature_hydras: "Hydras",
+                    ellipses: "...",
+                    creature_ancient_treant: "Ancient Treant",
+                    creature_dragon: "Dragon",
+                    creature_black_dragon: "Black Dragon",
+
+                    npc_encounter_table_title: "4. NPC Encounter Table (d20, per Region/Theme)",
+                    npc_encounter_header: "NPC Encounter",
+                    details_motivation_header: "Details/Motivation",
+                    npc_traveling_merchant: "Traveling Merchant",
+                    details_traveling_merchant: "Buying/selling, seeking protection, carrying rumors.",
+                    npc_rival_adventuring_party: "Rival Adventuring Party",
+                    details_rival_adventuring_party: "Friendly, neutral, or hostile; pursuing a similar goal.",
+                    npc_hermit_reclusive: "Hermit/Reclusive NPC",
+                    details_hermit_reclusive: "Offers wisdom, sells rare items, warns of dangers.",
+                    npc_scout_patrol: "Scout/Patrol",
+                    details_scout_patrol: "From a nearby settlement or faction.",
+                    npc_fugitive_outlaw: "Fugitive/Outlaw",
+                    details_fugitive_outlaw: "Seeking refuge, desperate, may be dangerous.",
+                    npc_lost_traveler: "Lost Traveler",
+                    details_lost_traveler: "Needs help, can offer information or a small reward.",
+                    npc_monster_hunter: "Monster Hunter",
+                    details_monster_hunter: "Tracking something in the area, may offer a bounty.",
+                    npc_cultists_secret_society: "Cultists/Secret Society",
+                    details_cultists_secret_society: "Performing a ritual, gathering something, secretive.",
+                    npc_unique_npc: "Unique NPC",
+                    details_unique_npc: "A named character with a specific mini-quest or major secret.",
+
+                    hazard_type_table_title: "5. Hazard Type Table (d12, per Terrain)",
+                    hazard_type_table_description: "This is an example table. You would populate this with hazards appropriate for your specific biomes.",
+                    hazard_forest_example: "Forest Hazards (Example)",
+                    hazard_mountain_example: "Mountain Hazards (Example)",
+                    hazard_swamp_example: "Swamp Hazards (Example)",
+                    hazard_thick_undergrowth: "Thick Undergrowth",
+                    hazard_steep_cliff: "Steep Cliff",
+                    hazard_quicksand: "Quicksand",
+                    hazard_poisonous_plants: "Poisonous Plants",
+                    hazard_rockslide: "Rockslide",
+                    hazard_disease_insects: "Disease-carrying Insects",
+                    hazard_sudden_sinkhole: "Sudden Sinkhole",
+                    hazard_strong_winds: "Strong Winds",
+                    hazard_dense_fog_mist: "Dense Fog/Mist",
+                    hazard_entangling_vines: "Entangling Vines",
+                    hazard_narrow_pass: "Narrow Pass",
+                    hazard_hidden_pit: "Hidden Pit",
+                    hazard_rogue_fey_ambush: "Rogue Fey Ambush",
+                    hazard_avalanche_zone: "Avalanche Zone",
+                    hazard_carnivorous_plants: "Carnivorous Plants",
+                    hazard_wild_magic_surge: "Wild Magic Surge",
+                    hazard_magical_storm: "Magical Storm",
+                    hazard_ghastly_mire: "Ghastly Mire",
+
+                    object_treasure_table_title: "6. Object/Treasure Found Table (d20)",
+                    object_treasure_found_header: "Object/Treasure Found",
+                    object_mundane_supplies: "Mundane Supplies",
+                    notes_mundane_supplies: "Lost rations, rope, broken tool.",
+                    object_small_coin: "Small amount of coin",
+                    notes_small_coin: "1d6gp, 2d10sp.",
+                    object_useful_mundane_item: "Useful mundane item",
+                    notes_useful_mundane_item: "Healing potion, flint & steel, scroll case (empty).",
+                    object_clue_map_fragment: "Clue/Map Fragment",
+                    notes_clue_map_fragment: "A torn map pointing to a ruin, a cryptic note, a symbol.",
+                    object_minor_magic_item: "Minor Magic Item",
+                    notes_minor_magic_item: "Potion, scroll, single-use wondrous item.",
+                    object_valuable_natural_resource: "Valuable Natural Resource",
+                    notes_valuable_natural_resource: "Rare gem, exotic animal pelt, valuable ore.",
+                    object_remains_story: "Remains with a Story",
+                    notes_remains_story: "Skeleton with a journal, a forgotten camp.",
+                    object_strange_device: "Strange Device/Artifact",
+                    notes_strange_device: "Non-magical but unusual, its purpose unknown.",
+
+                    sub_tables_title: "III. Sub-Tables for Features/Locations",
+                    sub_tables_description: "When a Major Feature or Lair is generated, you'd roll on one of these.",
+                    ruin_type_table_title: "1. Ruin Type Table (d12)",
+                    ruin_type_header: "Ruin Type",
+                    potential_inhabitants_secrets_header: "Potential Inhabitants/Secrets",
+                    ruin_ancient_watchtower: "Ancient Watchtower",
+                    ruin_notes_ancient_watchtower: "Old defenses, small garrison.",
+                    ruin_crumbling_temple: "Crumbling Temple/Shrine",
+                    ruin_notes_crumbling_temple: "Forgotten deity, cult activity.",
+                    ruin_abandoned_village: "Abandoned Village",
+                    ruin_notes_abandoned_village: "Ghosts, reclusive animals, hidden cellar.",
+                    ruin_ruined_fort_castle: "Ruined Fort/Castle",
+                    ruin_notes_ruined_fort_castle: "Bandits, monsters, hidden treasure.",
+                    ruin_collapsed_mine_entrance: "Collapsed Mine Entrance",
+                    ruin_notes_collapsed_mine_entrance: "Monstrous inhabitants, mineral veins.",
+                    ruin_overgrown_tomb_crypt: "Overgrown Tomb/Crypt",
+                    ruin_notes_overgrown_tomb_crypt: "Undead, ancient artifacts.",
+                    ruin_strange_alien_structure: "Strange, Alien Structure",
+                    ruin_notes_strange_alien_structure: "Mysterious technology, otherworldly influence.",
+
+                    lair_type_table_title: "2. Lair Type Table (d10)",
+                    lair_type_header: "Lair Type",
+                    common_occupants_header: "Common Occupants (example)",
+                    lair_cave_system: "Cave System",
+                    lair_occupants_cave_system: "Goblins, Orcs, Bears.",
+                    lair_den_burrow: "Den/Burrow",
+                    lair_occupants_den_burrow: "Wolves, Giant Spiders, Owlbears.",
+                    lair_nest_perch: "Nest/Perch",
+                    lair_occupants_nest_perch: "Giant Birds, Wyverns, Harpies.",
+                    lair_hidden_glen_grove: "Hidden Glen/Grove",
+                    lair_occupants_hidden_glen_grove: "Fey creatures, Druids, monstrous plants.",
+                    lair_subterranean_lair: "Subterranean Lair",
+                    lair_occupants_subterranean_lair: "Drow, Undead, Oozes.",
+                    lair_unique_lair: "Unique Lair",
+                    lair_occupants_unique_lair: "Dragon's hoard, Lich's tower, Demon's gate.",
+
+                    roll_dice: "Roll ", // Prefix for dice buttons, e.g., "Roll d20"
+                    result_prefix: "Result"
+                },
+                es: {
+                    title: "Generador de Hexcrawl",
+                    header_title: "Generador de Mapas y Contenido de Hexcrawl",
+                    tables_section_title: "Tablas de Generación de Hexcrawl",
+                    tables_description: "Utiliza estas tablas para generar tu mapa y contenido de hexcrawl sobre la marcha. Recuerda adaptar las entradas a la ambientación y los temas específicos de tu campaña.",
+                    map_generation_tables_title: "I. Tablas de Generación de Mapas (Por Hexágono)",
+                    map_generation_tables_description: "Cuando los jugadores se muevan a un hexágono nuevo y no revelado, deberías tirar primero en estas tablas.",
+                    terrain_table_title: "1. Tabla de Tipos de Terreno (d20)",
+                    terrain_table_description: "Esta tabla determina la característica principal del terreno del hexágono. A menudo está influenciada por los hexágonos adyacentes para crear mapas de aspecto más natural.",
+                    table_header_roll: "Tirada (d20)",
+                    terrain_type_header: "Tipo de Terreno",
+                    table_header_notes: "Notas",
+                    terrain_forest: "Bosque",
+                    notes_forest: "Se puede especificar Ligero, Denso, Antiguo, etc.",
+                    terrain_hills: "Colinas",
+                    notes_hills: "Se puede especificar Onduladas, Rocosas, Empinadas, etc.",
+                    terrain_plains: "Llanuras",
+                    notes_plains: "Se puede especificar Pastizal, Sabana, Estepa, etc.",
+                    terrain_mountains: "Montañas",
+                    notes_mountains: "Se puede especificar Estribaciones, Picos, Volcánicas, etc.",
+                    terrain_swamp_marsh: "Pantano/Marisma",
+                    notes_swamp_marsh: "Se puede especificar Ciénaga, Pantano, Manglar, etc.",
+                    terrain_river_lake: "Río/Lago",
+                    notes_river_lake: "Considerar si una masa de agua significativa domina.",
+                    terrain_desert: "Desierto",
+                    notes_desert: "Se puede especificar Arenoso, Rocoso, Árido, etc.",
+                    terrain_badlands: "Tierras Baldías",
+                    notes_badlands: "Terreno extraño, desolado o difícil.",
+                    terrain_unique_special: "Único/Especial",
+                    notes_unique_special: "Tira en una subtabla para terreno raro (ej., arboleda encantada, caldera volcánica, isla flotante).",
+
+                    major_feature_table_title: "2. Tabla de Características/Hitos Principales (d20)",
+                    major_feature_table_description: "Una vez establecido el terreno, esta tabla determina si hay una característica estática significativa en el hexágono.",
+                    major_feature_header: "Característica Principal",
+                    major_feature_none: "Ninguno",
+                    notes_none: "El hexágono es principalmente terreno natural.",
+                    major_feature_ruin: "Ruina",
+                    notes_ruin: "Tira en una subtabla de \"Tipo de Ruina\" (ej., Torre Antigua, Muro Derruido, Pueblo Abandonado).",
+                    major_feature_settlement: "Asentamiento",
+                    notes_settlement: "Tira en una subtabla de \"Tipo de Asentamiento\" (ej., Aldea, Pueblo, Fortín Aislado, Campamento Nómada).",
+                    major_feature_lair: "Guarida",
+                    notes_lair: "Una morada prominente, a menudo a largo plazo, de una criatura. Tira en una subtabla de \"Tipo de Guarida\".",
+                    major_feature_natural_wonder: "Maravilla Natural",
+                    notes_natural_wonder: "Característica geológica o botánica única (ej., Cascada Gigante, Bosque Petrificado, Cuevas de Cristal).",
+                    major_feature_magical_nexus: "Nexo Mágico",
+                    notes_magical_nexus: "Un lugar con fuerte energía mágica (ej., Piedras Erguidas Antiguas, Cruce Feérico, Zona de Magia Salvaje).",
+                    major_feature_dungeon_entrance: "Entrada de Mazmorra",
+                    notes_dungeon_entrance: "Una entrada a un complejo subterráneo.",
+                    major_feature_resource_node: "Nodo de Recursos",
+                    notes_resource_node: "Un recurso natural significativo (ej., Mina, Cantera, Coto de Caza Rico, Parche de Hierbas Raras).",
+                    major_feature_unique_quest_hook: "Único/Gancho de Misión",
+                    notes_unique_quest_hook: "Algo muy inusual o directamente relacionado con una posible misión (ej., Dirigible Estrellado, Esqueleto Gigante, Cráter Brillante Misterioso).",
+
+                    content_generation_tables_title: "II. Tablas de Generación de Contenido (Por Hexágono / Por Turno de Viaje)",
+                    content_generation_tables_description: "Estas tablas se utilizan cuando los jugadores están explorando activamente un hexágono o cuando buscan encuentros durante el viaje.",
+                    encounter_check_title: "1. Chequeo de Encuentro (d6, d8, d12 o d20, dependiendo de la tasa de encuentro deseada)",
+                    encounter_check_description: "Esta tirada determina si <em>algo</em> sucede durante un segmento de viaje dado (ej., una \"guardia\" o medio día de viaje).",
+                    table_header_roll_example: "Tirada (ej., 1d6)",
+                    table_header_result: "Resultado",
+                    result_encounter: "Encuentro",
+                    notes_encounter: "Tira en la tabla de Tipo de Encuentro específica.",
+                    result_sign_discovery: "Señal/Descubrimiento",
+                    notes_sign_discovery: "Tira en una tabla de \"Señal/Descubrimiento\" (rastros, humo a distancia, sonidos extraños, planta rara).",
+                    result_nothing: "Nada",
+                    notes_uneventful_travel: "Viaje sin incidentes.",
+
+                    encounter_type_table_title: "2. Tabla de Tipo de Encuentro (d20)",
+                    encounter_type_table_description: "Si ocurre un encuentro, esta tabla determina su naturaleza. Probablemente querrás diferentes versiones de esta tabla por <strong>tipo de terreno</strong> (ej., \"Encuentros en el Bosque\", \"Encuentros en la Montaña\").",
+                    encounter_type_header: "Tipo de Encuentro",
+                    encounter_creature: "Encuentro con Criaturas",
+                    notes_creature_encounter: "Tira en una tabla de \"Tipo de Criatura\" para el terreno. Puede ser hostil, neutral o en fuga.",
+                    encounter_npc: "Encuentro con PNJ",
+                    notes_npc_encounter: "Tira en la tabla de \"Encuentro con PNJ\" (ej., Mercader Ambulante, Aventureros Rivales, Ermitaño, Trampero).",
+                    encounter_environmental_hazard: "Peligro Ambiental",
+                    notes_environmental_hazard: "Tira en la tabla de \"Tipo de Peligro\" (ej., Arenas Movedizas, Inundación Repentina, Desprendimiento de Rocas, Niebla Densa, Enjambre de Insectos).",
+                    encounter_object_treasure: "Objeto/Tesoro Encontrado",
+                    notes_object_treasure: "Tira en la tabla de \"Objeto/Tesoro\" (ej., Objeto Perdido, Escondite Enterrado, Restos de un Viajero).",
+                    encounter_event_complication: "Evento/Complicación",
+                    notes_event_complication: "Un evento no relacionado con combate ni objetos (ej., Fenómeno Extraño, Perdido, Cambio Climático Inesperado, Señal de una Amenaza Mayor).",
+                    encounter_lair_fixed_location: "Guarida/Ubicación Fija",
+                    notes_lair_fixed_location: "Este encuentro es en realidad una ubicación fija no revelada previamente en el hexágono (ej., una pequeña cueva, un santuario oculto). Esto se añade a tu mapa.",
+
+                    creature_type_table_title: "3. Tabla de Tipo de Criatura (d20, por Terreno/Región)",
+                    creature_type_table_description: "Esta es una tabla de ejemplo. La poblarías con criaturas apropiadas para tus biomas específicos.",
+                    creature_forest_example: "Criaturas del Bosque (Ejemplo)",
+                    creature_mountain_example: "Criaturas de Montaña (Ejemplo)",
+                    creature_swamp_example: "Criaturas del Pantano (Ejemplo)",
+                    creature_giant_spiders: "Arañas Gigantes",
+                    creature_goblins: "Goblins",
+                    creature_giant_frogs: "Ranas Gigantes",
+                    creature_wolves: "Lobos",
+                    creature_dire_wolves: "Lobos Temibles",
+                    creature_crocodiles: "Cocodrilos",
+                    creature_owlbear: "Osogriego",
+                    creature_giant_eagles: "Águilas Gigantes",
+                    creature_hydras: "Hidras",
+                    ellipses: "...",
+                    creature_ancient_treant: "Treant Antiguo",
+                    creature_dragon: "Dragón",
+                    creature_black_dragon: "Dragón Negro",
+
+                    npc_encounter_table_title: "4. Tabla de Encuentros con PNJ (d20, por Región/Tema)",
+                    npc_encounter_header: "Encuentro con PNJ",
+                    details_motivation_header: "Detalles/Motivación",
+                    npc_traveling_merchant: "Mercader Ambulante",
+                    details_traveling_merchant: "Comprando/vendiendo, buscando protección, llevando rumores.",
+                    npc_rival_adventuring_party: "Grupo de Aventureros Rival",
+                    details_rival_adventuring_party: "Amistoso, neutral u hostil; persiguiendo un objetivo similar.",
+                    npc_hermit_reclusive: "Ermitaño/PNJ Recluso",
+                    details_hermit_reclusive: "Ofrece sabiduría, vende objetos raros, advierte de peligros.",
+                    npc_scout_patrol: "Explorador/Patrulla",
+                    details_scout_patrol: "De un asentamiento o facción cercana.",
+                    npc_fugitive_outlaw: "Fugitivo/Proscrito",
+                    details_fugitive_outlaw: "Buscando refugio, desesperado, puede ser peligroso.",
+                    npc_lost_traveler: "Viajero Perdido",
+                    details_lost_traveler: "Necesita ayuda, puede ofrecer información o una pequeña recompensa.",
+                    npc_monster_hunter: "Cazador de Monstruos",
+                    details_monster_hunter: "Rastrea algo en la zona, puede ofrecer una recompensa.",
+                    npc_cultists_secret_society: "Cultistas/Sociedad Secreta",
+                    details_cultists_secret_society: "Realizando un ritual, recolectando algo, secretista.",
+                    npc_unique_npc: "PNJ Único",
+                    details_unique_npc: "Un personaje nombrado con una mini-misión específica o un gran secreto.",
+
+                    hazard_type_table_title: "5. Tabla de Tipos de Peligro (d12, por Terreno)",
+                    hazard_type_table_description: "Esta es una tabla de ejemplo. La poblarías con peligros apropiados para tus biomas específicos.",
+                    hazard_forest_example: "Peligros del Bosque (Ejemplo)",
+                    hazard_mountain_example: "Peligros de Montaña (Ejemplo)",
+                    hazard_swamp_example: "Peligros del Pantano (Ejemplo)",
+                    hazard_thick_undergrowth: "Sotobosque Denso",
+                    hazard_steep_cliff: "Acantilado Empinado",
+                    hazard_quicksand: "Arenas Movedizas",
+                    hazard_poisonous_plants: "Plantas Venenosas",
+                    hazard_rockslide: "Desprendimiento de Rocas",
+                    hazard_disease_insects: "Insectos Portadores de Enfermedades",
+                    hazard_sudden_sinkhole: "Dolina Repentina",
+                    hazard_strong_winds: "Vientos Fuertes",
+                    hazard_dense_fog_mist: "Niebla Densa/Bruma",
+                    hazard_entangling_vines: "Enredaderas Enredadizas",
+                    hazard_narrow_pass: "Paso Estrecho",
+                    hazard_hidden_pit: "Pozo Oculto",
+                    hazard_rogue_fey_ambush: "Emboscada de Hadas Rebeldes",
+                    hazard_avalanche_zone: "Zona de Avalanchas",
+                    hazard_carnivorous_plants: "Plantas Carnívoras",
+                    hazard_wild_magic_surge: "Oleada de Magia Salvaje",
+                    hazard_magical_storm: "Tormenta Mágica",
+                    hazard_ghastly_mire: "Pantano Macabro",
+
+                    object_treasure_table_title: "6. Tabla de Objetos/Tesoros Encontrados (d20)",
+                    object_treasure_found_header: "Objeto/Tesoro Encontrado",
+                    object_mundane_supplies: "Suministros Mundanos",
+                    notes_mundane_supplies: "Raciones perdidas, cuerda, herramienta rota.",
+                    object_small_coin: "Pequeña cantidad de moneda",
+                    notes_small_coin: "1d6po, 2d10pc.",
+                    object_useful_mundane_item: "Objeto mundano útil",
+                    notes_useful_mundane_item: "Poción curativa, pedernal y eslabón, estuche de pergamino (vacío).",
+                    object_clue_map_fragment: "Pista/Fragmento de Mapa",
+                    notes_clue_map_fragment: "Un mapa rasgado que apunta a una ruina, una nota críptica, un símbolo.",
+                    object_minor_magic_item: "Objeto Mágico Menor",
+                    notes_minor_magic_item: "Poción, pergamino, objeto maravilloso de un solo uso.",
+                    object_valuable_natural_resource: "Recurso Natural Valioso",
+                    notes_valuable_natural_resource: "Gema rara, piel de animal exótico, mineral valioso.",
+                    object_remains_story: "Restos con una Historia",
+                    notes_remains_story: "Esqueleto con un diario, un campamento olvidado.",
+                    object_strange_device: "Dispositivo/Artefacto Extraño",
+                    notes_strange_device: "No mágico pero inusual, con propósito desconocido.",
+
+                    sub_tables_title: "III. Subtablas para Características/Ubicaciones",
+                    sub_tables_description: "Cuando se genera una Característica Principal o Guarida, tirarías en una de estas.",
+                    ruin_type_table_title: "1. Tabla de Tipos de Ruina (d12)",
+                    ruin_type_header: "Tipo de Ruina",
+                    potential_inhabitants_secrets_header: "Posibles Habitantes/Secretos",
+                    ruin_ancient_watchtower: "Antigua Atalaya",
+                    ruin_notes_ancient_watchtower: "Viejas defensas, pequeña guarnición.",
+                    ruin_crumbling_temple: "Templo/Santuario Desmoronado",
+                    ruin_notes_crumbling_temple: "Deidad olvidada, actividad de culto.",
+                    ruin_abandoned_village: "Pueblo Abandonado",
+                    ruin_notes_abandoned_village: "Fantasma, animales solitarios, sótano oculto.",
+                    ruin_ruined_fort_castle: "Fuerte/Castillo Ruinoso",
+                    ruin_notes_ruined_fort_castle: "Bandidos, monstruos, tesoro oculto.",
+                    ruin_collapsed_mine_entrance: "Entrada de Mina Colapsada",
+                    ruin_notes_collapsed_mine_entrance: "Habitantes monstruosos, vetas minerales.",
+                    ruin_overgrown_tomb_crypt: "Tumba/Cripta Cubierta de Vegetación",
+                    ruin_notes_overgrown_tomb_crypt: "No muertos, artefactos antiguos.",
+                    ruin_strange_alien_structure: "Estructura Extraña, Alienígena",
+                    ruin_notes_strange_alien_structure: "Tecnología misteriosa, influencia de otro mundo.",
+
+                    lair_type_table_title: "2. Tabla de Tipos de Guarida (d10)",
+                    lair_type_header: "Tipo de Guarida",
+                    common_occupants_header: "Ocupantes Comunes (ejemplo)",
+                    lair_cave_system: "Sistema de Cuevas",
+                    lair_occupants_cave_system: "Goblins, Orcos, Osos.",
+                    lair_den_burrow: "Madriguera/Guarida",
+                    lair_occupants_den_burrow: "Lobos, Arañas Gigantes, Osogriegos.",
+                    lair_nest_perch: "Nido/Percha",
+                    lair_occupants_nest_perch: "Aves Gigantes, Guivernos, Arpías.",
+                    lair_hidden_glen_grove: "Cañada/Arboleda Oculta",
+                    lair_occupants_hidden_glen_grove: "Criaturas feéricas, Druidas, plantas monstruosas.",
+                    lair_subterranean_lair: "Guarida Subterránea",
+                    lair_occupants_subterranean_lair: "Drow, No muertos, Babas.",
+                    lair_unique_lair: "Guarida Única",
+                    lair_occupants_unique_lair: "Tesoro de Dragón, Torre de Lich, Puerta de Demonio.",
+
+                    roll_dice: "Tirar ", // Prefix for dice buttons, e.g., "Tirar d20"
+                    result_prefix: "Resultado"
+                }
+            };
+
+            let currentLanguage = 'es'; // Default language
+
+            // Function to set the language of the page
+            function setLanguage(lang) {
+                currentLanguage = lang;
+                document.documentElement.lang = lang; // Set HTML lang attribute
+
+                // Update title
+                const titleElement = document.querySelector('title');
+                if (titleElement) {
+                    const key = titleElement.getAttribute('data-translate-key');
+                    if (key && translations[lang][key]) {
+                        titleElement.textContent = translations[lang][key];
+                    }
+                }
+
+                document.querySelectorAll('[data-translate-key]').forEach(element => {
+                    const key = element.getAttribute('data-translate-key');
+                    if (translations[lang][key]) {
+                        element.textContent = translations[lang][key];
+                    }
+                });
+
+                // Handle elements with data-translate-key-prefix (like dice buttons)
+                document.querySelectorAll('[data-translate-key-prefix]').forEach(button => {
+                    const prefixKey = button.getAttribute('data-translate-key-prefix');
+                    if (translations[lang][prefixKey]) {
+                        const diceType = button.getAttribute('data-target-dice');
+                        button.textContent = translations[lang][prefixKey] + `d${diceType}`;
+                    }
+                });
+            }
+
+            // Language toggle event listener
+            const languageToggle = document.getElementById('language-toggle');
+            languageToggle.addEventListener('change', (event) => {
+                setLanguage(event.target.value);
+            });
+
+            // Get all dice roll buttons that are next to tables
+            const rollDiceButtons = document.querySelectorAll('.roll-dice-table-btn');
+
+            rollDiceButtons.forEach(button => {
+                // Find the associated select and result elements for this specific button
+                const diceControlsDiv = button.closest('.dice-controls');
+                const diceTypeSelect = diceControlsDiv.querySelector('.dice-select-table');
+                const diceResultDiv = diceControlsDiv.querySelector('.dice-result-table');
+                const resultValueSpan = diceControlsDiv.querySelector('.result-value-table');
+                // Find the table associated with these controls
+                const associatedTable = diceControlsDiv.nextElementSibling; // The table is the next sibling after dice-controls
+
+                // Set initial selected option based on data-default-dice attribute
+                const defaultDice = button.getAttribute('data-target-dice');
+                if (defaultDice) {
+                    diceTypeSelect.value = defaultDice;
+                    // Initial button text based on default language
+                    button.textContent = translations[currentLanguage].roll_dice + `d${defaultDice}`;
+                }
+
+                // Add event listener to update button text when select changes
+                diceTypeSelect.addEventListener('change', () => {
+                    button.textContent = translations[currentLanguage].roll_dice + `d${diceTypeSelect.value}`;
+                });
+
+                // Function to remove all highlights from the associated table
+                function clearHighlights(table) {
+                    const highlightedRows = table.querySelectorAll('.highlighted-row');
+                    highlightedRows.forEach(row => {
+                        row.classList.remove('highlighted-row');
+                    });
+                }
+
+                // Add click event listener for the roll button
+                button.addEventListener('click', () => {
+                    const maxRoll = parseInt(diceTypeSelect.value, 10);
+                    const result = Math.floor(Math.random() * maxRoll) + 1;
+                    resultValueSpan.textContent = result;
+                    diceResultDiv.classList.remove('hidden'); // Show the result box
+
+                    // Clear any existing highlights in this table
+                    clearHighlights(associatedTable);
+
+                    // Find and highlight the corresponding row
+                    const tableRows = associatedTable.querySelectorAll('tbody tr');
+                    tableRows.forEach(row => {
+                        const rollCell = row.querySelector('td:first-child');
+                        if (rollCell) {
+                            const rollText = rollCell.textContent.trim();
+                            let isMatch = false;
+
+                            if (rollText.includes('-')) {
+                                // Handle ranges like "1-4"
+                                const [minStr, maxStr] = rollText.split('-');
+                                const min = parseInt(minStr, 10);
+                                const max = parseInt(maxStr, 10);
+                                if (result >= min && result <= max) {
+                                    isMatch = true;
+                                }
+                            } else if (!isNaN(parseInt(rollText, 10))) {
+                                // Handle single numbers like "17" or "20"
+                                const singleRoll = parseInt(rollText, 10);
+                                if (result === singleRoll) {
+                                    isMatch = true;
+                                }
+                            }
+                            // Ignore rows with "..." or other non-numeric roll indicators for highlighting
+
+                            if (isMatch) {
+                                row.classList.add('highlighted-row');
+                            }
+                        }
+                    });
+                });
+            });
+
+            // Initialize language on page load
+            setLanguage(currentLanguage);
+        });
+    </script>
+</body>
+</html>
